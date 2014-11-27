@@ -3,37 +3,29 @@ package edu.berkeley.monitoring.sampleApp;
 
 import java.util.ArrayList;
 
-import edu.berkeley.monitoring.util.bluetooth.*;
-
 import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.Window;
 import android.view.View.OnClickListener;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.TextView;
+import android.widget.Toast;
 import edu.berkeley.monitoring.util.bluetooth.BluetoothExceptions;
 import edu.berkeley.monitoring.util.bluetooth.BluetoothInterface;
 import edu.berkeley.monitoring.util.bluetooth.BluetoothService;
 import edu.berkeley.monitoring.util.bluetooth.Device;
-import edu.berkeley.monitoring.sampleApp.R;
 
 
 public class BluetoothAppLib extends Activity implements BluetoothInterface{
     private static final boolean D = true;
     private static final String TAG = "BluetoothChat";
     private BluetoothService bluetoothSerivceHandler;
-    private Handler msgHandle;
-    private Button mTurnOnBluetooth;
+    private Button mTurnOnBluetooth;    
+    public static final String TOAST = "toast";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,7 +50,7 @@ public class BluetoothAppLib extends Activity implements BluetoothInterface{
         if(D) Log.e(TAG, "++ ON START ++");
         try{
 
-        	bluetoothSerivceHandler = new BluetoothService(this, msgHandle, this);
+        	bluetoothSerivceHandler = new BluetoothService(this, msgHandler, this);
         }
         catch(BluetoothExceptions e){
         	//TODO
@@ -111,7 +103,6 @@ public class BluetoothAppLib extends Activity implements BluetoothInterface{
         // Initialize the buffer for outgoing messages
         mOutStringBuffer = new StringBuffer("");*/
     }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -152,6 +143,59 @@ public class BluetoothAppLib extends Activity implements BluetoothInterface{
 	@Override
 	public void onFinishObtainingUnpairedDevices(
 			ArrayList<String> unpairedDeviceAddress) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+    // The Handler that gets information back from the BluetoothChatService
+    private final Handler msgHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+/**            case BluetoothService.MESSAGE_STATE_CHANGE:
+                if(D) Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
+                switch (msg.arg1) {
+                case BluetoothChatService.STATE_CONNECTED:
+                    mTitle.setText(R.string.title_connected_to);
+                    mTitle.append(mConnectedDeviceName);
+                    mConversationArrayAdapter.clear();
+                    break;
+                case BluetoothChatService.STATE_CONNECTING:
+                    mTitle.setText(R.string.title_connecting);
+                    break;
+                case BluetoothChatService.STATE_LISTEN:
+                case BluetoothChatService.STATE_NONE:
+                    mTitle.setText(R.string.title_not_connected);
+                    break;
+                }
+                break;
+            case MESSAGE_WRITE:
+                byte[] writeBuf = (byte[]) msg.obj;
+                // construct a string from the buffer
+                String writeMessage = new String(writeBuf);
+                mConversationArrayAdapter.add("Me:  " + writeMessage);
+                break;
+            case MESSAGE_READ:
+                byte[] readBuf = (byte[]) msg.obj;
+                // construct a string from the valid bytes in the buffer
+                String readMessage = new String(readBuf, 0, msg.arg1);
+                mConversationArrayAdapter.add(mConnectedDeviceName+":  " + readMessage);
+                break;
+            case MESSAGE_DEVICE_NAME:
+                // save the connected device's name
+                mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
+                Toast.makeText(getApplicationContext(), "Connected to "
+                               + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
+                break;*/
+            case BluetoothService.MESSAGE_TOAST:
+                Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST),
+                               Toast.LENGTH_SHORT).show();
+                break;
+            }
+        }
+    };
+	@Override
+	public void onSwitchingonBluetooth() {
 		// TODO Auto-generated method stub
 		
 	}

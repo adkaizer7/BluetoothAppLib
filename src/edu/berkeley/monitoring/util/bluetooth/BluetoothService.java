@@ -10,6 +10,10 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
 
+//import com.example.bluetoothsample.BluetoothChat;
+
+import edu.berkeley.monitoring.sampleApp.R;
+
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -23,6 +27,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.widget.Toast;
 
 /**
  * @author  Adarsh
@@ -56,6 +61,24 @@ enum MessageFlags{
 	}
 }
 
+//TODO
+/**
+ * enum BluetoothFlags{
+
+	REQUEST_ENABLE_BT(0);
+	
+	private int value;
+	
+	BluetoothFlags(int value){
+		this.value = value;
+	}
+	
+	public int getValue(){
+		return this.value;
+	}
+	
+} */
+
 public class BluetoothService{
 
 	/* (non-Javadoc)
@@ -87,6 +110,8 @@ public class BluetoothService{
     public static final String DEVICE_NAME = "device_name";
     public static final String TOAST = "toast";
     
+    private final int REQUEST_ENABLE_BT = 1;
+    
     //Current state of the connection
     private StateFlags mState;
     
@@ -109,7 +134,7 @@ public class BluetoothService{
 	
     //Since we haven't paired with these devices yet, we only know their name 
     //and not other details
-    private ArrayList<String> listOfUnpairedDevices;
+    private ArrayList<UnpairedBTDevices> listOfUnpairedDevices;
     
     private BluetoothInterface bluetoothInterface; 
     
@@ -133,7 +158,7 @@ public class BluetoothService{
         }
         else{
         	//Allocate memory for listOfUnpairedDevices and listOfPairedDevices;
-        	listOfUnpairedDevices = new ArrayList<String>(); 
+        	listOfUnpairedDevices = new ArrayList<UnpairedBTDevices>(); 
 
         	// Register for broadcasts when a device is discovered
         	IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
@@ -156,9 +181,62 @@ public class BluetoothService{
         
 		if (!mBluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            parentActivity.startActivity(enableIntent);
+			parentActivity.startActivityForResult(enableIntent,REQUEST_ENABLE_BT);
         }
+		else{
+            Message msg = mHandler.obtainMessage(BluetoothService.MESSAGE_TOAST);
+            Bundle bundle = new Bundle();    
+            bundle.putString(BluetoothService.TOAST, "Bluetooth already on");
+            msg.setData(bundle);
+            mHandler.sendMessage(msg);
+        }
+			
 	}//TODO : throw error
+	
+
+    
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(D) Log.d(TAG, "onActivityResult " + resultCode);
+        switch (requestCode) {
+/**        case REQUEST_CONNECT_DEVICE:
+            // When DeviceListActivity returns with a device to connect
+            if (resultCode == Activity.RESULT_OK) {
+                // Get the device MAC address
+                String address = data.getExtras()
+                                     .getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+                // Get the BLuetoothDevice object
+                BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+                // Attempt to connect to the device
+                mChatService.connect(device);
+            }
+            break;*/
+        case REQUEST_ENABLE_BT:{
+            Message msg = mHandler.obtainMessage(BluetoothService.MESSAGE_TOAST);
+            Bundle bundle = new Bundle();    
+            // When the request to enable Bluetooth returns
+            if (resultCode == Activity.RESULT_OK) {
+                // Send a failure Acknowledgement message to the Activity
+                bundle.putString(BluetoothService.TOAST, "Bluetooth Turned on");
+            } else {
+                // User did not enable Bluetooth or an error occured
+                Log.d(TAG, "BT not enabled");
+                // Send a failure message back to the Activity
+                bundle.putString(BluetoothService.TOAST, "User declined switching on Bluetooth");
+            }
+            msg.setData(bundle);
+            mHandler.sendMessage(msg);
+        }break;
+/**        case PICKFILE_RESULT_CODE:
+        	   if(resultCode== Activity.RESULT_OK){
+        	    String FilePath = data.getData().getPath();
+            	if (D)
+            		Log.e(TAG, "Printing File Path");
+        	    mTextFile.setText(FilePath);
+        	    sendFile(FilePath);
+        	   }
+        	   break;*/
+        }
+    }
 	
 	
 	/**
@@ -263,7 +341,7 @@ public class BluetoothService{
 	}
 
 	//TODO
-	public ArrayList<String> getUnpairedDevices() {
+	public ArrayList<UnpairedBTDevices> getUnpairedDevices() {
 		return listOfUnpairedDevices;
 	}
 
@@ -599,7 +677,9 @@ public class BluetoothService{
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // If it's already paired, skip it, because it's been listed already
                 if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
-                	listOfUnpairedDevices.add(device.getName() + "\n" + device.getAddress());
+                	UnpairedBTDevices unpairedBTDevice = new UnpairedBTDevices(device.getName(),
+                											 device.getAddress());
+                	listOfUnpairedDevices.add(unpairedBTDevice);
                 	bluetoothInterface.onObtainedOneUnpairedDevices(device.getName() + "\n" + device.getAddress());
                 }
             // When discovery is finished, change the Activity title
